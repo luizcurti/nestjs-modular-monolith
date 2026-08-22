@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConsoleLogger } from '@nestjs/common';
- 
+
 class MockLogger extends ConsoleLogger {
   log(): void {
     // No-op for tests
@@ -20,7 +20,9 @@ class MockLogger extends ConsoleLogger {
 }
 
 export class TestHelper {
-  static async createTestingModule(moduleMetadata: any): Promise<TestingModule> {
+  static async createTestingModule(
+    moduleMetadata: any,
+  ): Promise<TestingModule> {
     return Test.createTestingModule(moduleMetadata)
       .setLogger(new MockLogger())
       .compile();

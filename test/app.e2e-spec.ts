@@ -3,7 +3,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UsersController } from '../src/modules/users/http/users.controller';
@@ -13,7 +12,7 @@ import { CreditController } from '../src/modules/credit-engine/http/credit-engin
 import { CreditService } from '../src/modules/credit-engine/domain/credit-engine.service';
 import { provideUsersRepository } from '../src/modules/users/domain/repositories/user.repository.provider';
 import { LoggerModule } from '../src/common/loggers/logger.module';
-import { User } from '../src/modules/users/domain/models/users.model';
+import { UserOrmEntity } from '../src/modules/users/domain/repositories/implementations/users.typeorm.entity';
 import { AllExceptionsFilter } from '../src/common/filters/exception.filter';
 import databaseConfig from '../src/config/database.config';
 
@@ -35,12 +34,11 @@ describe('Application (e2e)', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [User],
+          entities: [UserOrmEntity],
           synchronize: true,
           dropSchema: true,
         }),
-        TypeOrmModule.forFeature([User]),
-        EventEmitterModule.forRoot(),
+        TypeOrmModule.forFeature([UserOrmEntity]),
         GraphQLModule.forRoot<ApolloDriverConfig>({
           driver: ApolloDriver,
           autoSchemaFile: true,
@@ -74,7 +72,7 @@ describe('Application (e2e)', () => {
   });
 
   afterAll(async () => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -168,15 +166,11 @@ describe('Application (e2e)', () => {
     });
 
     it('returns 404 when user does not exist', () => {
-      return request(app.getHttpServer())
-        .get('/v1/users/99999')
-        .expect(404);
+      return request(app.getHttpServer()).get('/v1/users/99999').expect(404);
     });
 
     it('returns 400 for non-numeric ID', () => {
-      return request(app.getHttpServer())
-        .get('/v1/users/abc')
-        .expect(400);
+      return request(app.getHttpServer()).get('/v1/users/abc').expect(400);
     });
   });
 
@@ -251,25 +245,17 @@ describe('Application (e2e)', () => {
 
       const id = create.body.id;
 
-      await request(app.getHttpServer())
-        .delete(`/v1/users/${id}`)
-        .expect(204);
+      await request(app.getHttpServer()).delete(`/v1/users/${id}`).expect(204);
 
-      return request(app.getHttpServer())
-        .get(`/v1/users/${id}`)
-        .expect(404);
+      return request(app.getHttpServer()).get(`/v1/users/${id}`).expect(404);
     });
 
     it('returns 404 when trying to delete non-existent user', () => {
-      return request(app.getHttpServer())
-        .delete('/v1/users/99999')
-        .expect(404);
+      return request(app.getHttpServer()).delete('/v1/users/99999').expect(404);
     });
 
     it('returns 400 for non-numeric ID', () => {
-      return request(app.getHttpServer())
-        .delete('/v1/users/abc')
-        .expect(400);
+      return request(app.getHttpServer()).delete('/v1/users/abc').expect(400);
     });
   });
 
@@ -332,7 +318,10 @@ describe('Application (e2e)', () => {
         .expect((res) => {
           expect(res.body.data).toBeDefined();
           expect(res.body.data.create).toHaveProperty('name', 'GraphQL User');
-          expect(res.body.data.create).toHaveProperty('email', 'graphql@example.com');
+          expect(res.body.data.create).toHaveProperty(
+            'email',
+            'graphql@example.com',
+          );
         });
     });
 
@@ -391,8 +380,25 @@ describe('Application (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
+          expect(res.body.errors).toBeUndefined();
           expect(res.body.data.findUser).toHaveProperty('name', 'GQL Find');
-          expect(res.body.data.findUser).toHaveProperty('email', 'gqlfind@example.com');
+          expect(res.body.data.findUser).toHaveProperty(
+            'email',
+            'gqlfind@example.com',
+          );
+        });
+    });
+
+    it('query findUser — returns null with no GraphQL error for a non-existent ID', () => {
+      return request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: `query { findUser(id: 999999) { name email } }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.errors).toBeUndefined();
+          expect(res.body.data.findUser).toBeNull();
         });
     });
   });
@@ -403,9 +409,7 @@ describe('Application (e2e)', () => {
 
   describe('Error Handling', () => {
     it('returns 404 for non-existent routes', () => {
-      return request(app.getHttpServer())
-        .get('/v1/non-existent')
-        .expect(404);
+      return request(app.getHttpServer()).get('/v1/non-existent').expect(404);
     });
 
     it('returns 400 for invalid JSON in POST', () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { UsersTypeOrmRepository } from './users.typeorm.repository';
-import { User } from '../../models/users.model';
+import { UserOrmEntity } from './users.typeorm.entity';
 
 const mockLogger = {
   log: jest.fn(),
@@ -13,9 +13,9 @@ const mockLogger = {
 
 describe('UsersTypeOrmRepository', () => {
   let repository: UsersTypeOrmRepository;
-  let mockTypeOrmRepository: jest.Mocked<Repository<User>>;
+  let mockTypeOrmRepository: jest.Mocked<Repository<UserOrmEntity>>;
 
-  const mockUser: User = {
+  const mockUser: UserOrmEntity = {
     id: 1,
     name: 'Test User',
     email: 'test@example.com',
@@ -38,8 +38,8 @@ describe('UsersTypeOrmRepository', () => {
         },
       ],
     })
-    .setLogger(mockLogger)
-    .compile();
+      .setLogger(mockLogger)
+      .compile();
 
     repository = module.get<UsersTypeOrmRepository>(UsersTypeOrmRepository);
   });
@@ -124,7 +124,9 @@ describe('UsersTypeOrmRepository', () => {
 
       const result = await repository.update(1, { name: 'New Name' });
 
-      expect(mockTypeOrmRepository.update).toHaveBeenCalledWith(1, { name: 'New Name' });
+      expect(mockTypeOrmRepository.update).toHaveBeenCalledWith(1, {
+        name: 'New Name',
+      });
       expect(result).toEqual(updatedUser);
     });
 

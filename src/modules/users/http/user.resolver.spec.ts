@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserResolver } from './user.resolver';
 import { UsersService } from '../domain/users.service';
@@ -40,8 +41,8 @@ describe('UserResolver', () => {
         },
       ],
     })
-    .setLogger(mockLogger)
-    .compile();
+      .setLogger(mockLogger)
+      .compile();
 
     resolver = module.get<UserResolver>(UserResolver);
   });
@@ -105,6 +106,22 @@ describe('UserResolver', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return null (not a GraphQL error) when the service throws NotFoundException', async () => {
+      mockUsersService.findById.mockRejectedValue(
+        new NotFoundException('User with id 99 not found'),
+      );
+
+      const result = await resolver.findUser(99);
+
+      expect(result).toBeNull();
+    });
+
+    it('should rethrow errors that are not NotFoundException', async () => {
+      mockUsersService.findById.mockRejectedValue(new Error('Database down'));
+
+      await expect(resolver.findUser(1)).rejects.toThrow('Database down');
+    });
   });
 
   describe('create', () => {
@@ -133,7 +150,9 @@ describe('UserResolver', () => {
     it('should handle service errors', async () => {
       mockUsersService.create.mockRejectedValue(new Error('Service error'));
 
-      await expect(resolver.create(createUserDto)).rejects.toThrow('Service error');
+      await expect(resolver.create(createUserDto)).rejects.toThrow(
+        'Service error',
+      );
     });
   });
 });

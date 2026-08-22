@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-import { Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class CreditService {
-    constructor() { }
+  constructor() {}
 
-    findAll() {
-        return 'Hello Credit Engine'
-    }
+  findAll() {
+    return 'Hello Credit Engine';
+  }
 }

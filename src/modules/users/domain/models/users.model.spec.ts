@@ -7,7 +7,6 @@ describe('User Model', () => {
   });
 
   it('should create user with properties', () => {
-
     const user = new User();
     user.id = 1;
     user.name = 'John Doe';
@@ -19,7 +18,6 @@ describe('User Model', () => {
   });
 
   it('should allow modification of properties', () => {
-    
     const user = new User();
 
     user.id = 1;
@@ -28,14 +26,13 @@ describe('User Model', () => {
 
     user.name = 'Updated Name';
     user.email = 'updated@example.com';
-    
+
     expect(user.id).toBe(1);
     expect(user.name).toBe('Updated Name');
     expect(user.email).toBe('updated@example.com');
   });
 
-  it('should be used as TypeORM entity', () => {
-
+  it('should be usable as a plain domain object', () => {
     const user = new User();
     user.id = 123;
     user.name = 'Database User';
@@ -48,7 +45,6 @@ describe('User Model', () => {
   });
 
   it('should allow creating multiple instances with different data', () => {
-
     const user1 = new User();
     user1.id = 1;
     user1.name = 'User 1';
@@ -58,7 +54,7 @@ describe('User Model', () => {
     user2.id = 2;
     user2.name = 'User 2';
     user2.email = 'user2@example.com';
-    
+
     expect(user1).not.toBe(user2);
     expect(user1.id).not.toBe(user2.id);
     expect(user1.name).not.toBe(user2.name);
@@ -66,7 +62,6 @@ describe('User Model', () => {
   });
 
   it('should have public properties', () => {
-    
     const user = new User();
 
     expect(() => {
@@ -81,13 +76,12 @@ describe('User Model', () => {
   });
 
   it('should work with object assignment', () => {
-    
     const userData = {
       id: 456,
       name: 'Assigned User',
       email: 'assigned@example.com',
     };
-    
+
     const user = Object.assign(new User(), userData);
 
     expect(user.id).toBe(userData.id);

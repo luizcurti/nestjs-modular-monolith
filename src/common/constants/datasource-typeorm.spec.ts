@@ -24,7 +24,7 @@ describe('DataSource Constants', () => {
   it('should have all expected enum values', () => {
     const expectedValues = ['typeorm', 'memory', 'redis', 'postgres'];
     const actualValues = Object.values(DataSource);
-    
+
     expect(actualValues).toEqual(expect.arrayContaining(expectedValues));
     expect(actualValues).toHaveLength(4);
   });
@@ -37,10 +37,9 @@ describe('DataSource Constants', () => {
   });
 
   it('should support Object.keys and Object.values operations', () => {
-
     const keys = Object.keys(DataSource);
     const values = Object.values(DataSource);
-    
+
     expect(keys).toContain('TYPEORM');
     expect(keys).toContain('MEMORY');
     expect(keys).toContain('REDIS');

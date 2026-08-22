@@ -1,3 +1,5 @@
+name: nestjs-modular-monolith
+
 services:
   postgres:
     container_name: qso
@@ -39,7 +41,7 @@ services:
   #   container_name: app-all-module
   #   command: yarn start:dev
   #   ports:
-  #     - '3002:3002'
+  #     - '3000:3000'
   #   volumes:
   #     - .:/usr/app
   #   networks:
@@ -48,18 +50,6 @@ services:
   #     - postgres
   #     - mongodb_container
   #     - redis
-
-  # app-credit:
-  #   build:
-  #     context: .
-  #   container_name: app-credit
-  #   command: yarn credit:start:dev
-  #   ports:
-  #     - '3003:3003'
-  #   volumes:
-  #     - .:/usr/app
-  #   networks:
-  #     - app-network
 
 networks:
   app-network:

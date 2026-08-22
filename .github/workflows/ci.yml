@@ -44,61 +44,84 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet"
+          --health-cmd "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/test --quiet"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_DATASOURCE: typeorm
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      TYPEORM_TYPE: postgres
+      TYPEORM_HOST: localhost
+      TYPEORM_PORT: 5432
+      TYPEORM_USERNAME: qso_user
+      TYPEORM_PASSWORD: qso_password
+      TYPEORM_DATABASE: qso_example
+      MONGODB_URL: mongodb://localhost:27017/users_management_ci
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci --legacy-peer-deps
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
 
-    # TESTS
-    - name: Run ESLint
-      run: npm run lint
+      # STATIC ANALYSIS
+      - name: Run ESLint
+        run: npm run lint
 
-    - name: TypeScript Check
-      run: npx tsc --noEmit
+      - name: TypeScript check
+        run: npx tsc --noEmit
 
-    - name: Run unit tests with coverage
-      run: npm run test:cov -- --passWithNoTests
+      # TESTS — unit / integration / e2e (three independent layers, see docs/mmd/testing-strategy.mmd)
+      - name: Run unit tests with coverage
+        run: npm run test:cov -- --passWithNoTests
 
-    - name: Run e2e tests with coverage
-      run: npm run test:e2e:cov
-      env:
-        DATABASE_DATASOURCE: typeorm
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-        TYPEORM_HOST: localhost
-        TYPEORM_PORT: 5432
-        TYPEORM_USERNAME: qso_user
-        TYPEORM_PASSWORD: qso_password
-        TYPEORM_DATABASE: qso_example
-        MONGODB_URL: mongodb://localhost:27017/test
+      - name: Run integration tests (real PostgreSQL + MongoDB)
+        run: npm run test:integration
 
-    # SECURITY
-    - name: Security audit - Overview
-      run: |
-        echo "Running security audit..."
-        npm audit || echo "Security vulnerabilities found - review required but CI continues"
-        echo "Audit completed. Check above for details."
-      continue-on-error: true
+      - name: Run e2e tests (SQLite in-memory)
+        run: npm run test:e2e
 
-    # DOCKER
-    - name: Build application
-      run: npm run build
+      - name: Run e2e tests (real PostgreSQL)
+        run: npm run test:e2e:docker
 
-    - name: Test Docker build
-      run: docker build -t monolithic-architecture .
+      # SECURITY
+      - name: Security audit
+        run: |
+          echo "Running security audit..."
+          npm audit || echo "Security vulnerabilities found - review required but CI continues"
+        continue-on-error: true
 
-    - name: Test Docker Compose
-      run: docker compose config
+      # BUILD
+      - name: Build application
+        run: npm run build
+
+      # COLLECTION — boot the built app and replay the Postman collection against it
+      - name: Boot application in the background
+        run: |
+          node dist/main.js &
+          echo $! > app.pid
+          npx wait-on http://localhost:3000/v1/credit --timeout 30000
+
+      - name: Run Postman collection (Newman)
+        run: npx --yes newman run docs/postman/nestjs-modular-monolith.postman_collection.json
+
+      - name: Stop application
+        if: always()
+        run: kill "$(cat app.pid)" || true
+
+      # DOCKER
+      - name: Test Docker build
+        run: docker build -t nestjs-modular-monolith .
+
+      - name: Test Docker Compose
+        run: docker compose config

@@ -16,8 +16,8 @@ describe('CreditService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [CreditService],
     })
-    .setLogger(mockLogger)
-    .compile();
+      .setLogger(mockLogger)
+      .compile();
 
     service = module.get<CreditService>(CreditService);
   });
@@ -28,17 +28,15 @@ describe('CreditService', () => {
 
   describe('findAll', () => {
     it('should return credit engine message', () => {
-  
       const result = service.findAll();
-      
+
       expect(result).toBe('Hello Credit Engine');
     });
 
     it('should always return the same message', () => {
-  
       const result1 = service.findAll();
       const result2 = service.findAll();
-      
+
       expect(result1).toBe(result2);
       expect(result1).toBe('Hello Credit Engine');
     });

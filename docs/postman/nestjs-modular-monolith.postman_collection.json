@@ -1,0 +1,432 @@
+{
+  "info": {
+    "name": "NestJS Modular Monolith",
+    "description": "REST + GraphQL API for the modular-monolith example. Every request carries an automated test asserting either a happy path (2xx, correct payload) or a sad path (4xx, correct error shape).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/v1", "type": "string" },
+    { "key": "graphqlUrl", "value": "http://localhost:3000/graphql", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create user — happy path (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('body has generated id, name and email', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('id');",
+                  "  pm.expect(body.name).to.eql('Ada Lovelace');",
+                  "  pm.expect(body.email).to.eql('ada.lovelace@example.com');",
+                  "  pm.collectionVariables.set('userId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"email\": \"ada.lovelace@example.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Create user — sad path (400, missing email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error body has statusCode, message, timestamp and path', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('statusCode', 400);",
+                  "  pm.expect(body).to.have.property('message');",
+                  "  pm.expect(body).to.have.property('timestamp');",
+                  "  pm.expect(body).to.have.property('path');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Missing Email\"\n}" },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Create user — sad path (400, invalid email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad Email\",\n  \"email\": \"not-an-email\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "List users — happy path (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('body is an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Get user by id — happy path (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns the created user', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(String(body.id)).to.eql(pm.collectionVariables.get('userId'));",
+                  "  pm.expect(body.name).to.eql('Ada Lovelace');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get user by id — sad path (404, unknown id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 404', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/999999", "host": ["{{baseUrl}}"], "path": ["users", "999999"] }
+          }
+        },
+        {
+          "name": "Get user by id — sad path (400, non-numeric id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/abc", "host": ["{{baseUrl}}"], "path": ["users", "abc"] }
+          }
+        },
+        {
+          "name": "Update user — happy path (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('name was updated, email untouched', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.name).to.eql('Augusta Ada King');",
+                  "  pm.expect(body.email).to.eql('ada.lovelace@example.com');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Augusta Ada King\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update user — sad path (400, invalid email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"not-valid\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update user — sad path (404, unknown id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 404', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ghost\"\n}" },
+            "url": { "raw": "{{baseUrl}}/users/999999", "host": ["{{baseUrl}}"], "path": ["users", "999999"] }
+          }
+        },
+        {
+          "name": "Delete user — happy path (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete user — sad path (404, already deleted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status is 404', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credit Engine",
+      "item": [
+        {
+          "name": "Health check — happy path (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('body is the expected greeting', () => pm.expect(pm.response.text()).to.eql('Hello Credit Engine'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/credit", "host": ["{{baseUrl}}"], "path": ["credit"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "create — happy path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('no GraphQL errors, user created with id', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.errors).to.be.undefined;",
+                  "  pm.expect(body.data.create).to.have.property('id');",
+                  "  pm.expect(body.data.create.name).to.eql('Grace Hopper');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  create(data: { name: \"Grace Hopper\", email: \"grace.hopper@example.com\" }) {\n    id\n    name\n    email\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] }
+          }
+        },
+        {
+          "name": "create — sad path (validation error, empty name)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 (GraphQL always 200, error in body)', () => pm.response.to.have.status(200));",
+                  "pm.test('response carries a GraphQL error', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.errors).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation {\n  create(data: { name: \"\", email: \"not-an-email\" }) {\n    id\n  }\n}",
+                "variables": "{}"
+              }
+            },
+            "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] }
+          }
+        },
+        {
+          "name": "findAll — happy path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns an array of users', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data.findAll).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": { "query": "query {\n  findAll {\n    id\n    name\n    email\n  }\n}", "variables": "{}" }
+            },
+            "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] }
+          }
+        },
+        {
+          "name": "findUser — sad path (unknown id returns null, no error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('findUser is null, no GraphQL error', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.errors).to.be.undefined;",
+                  "  pm.expect(body.data.findUser).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "graphql",
+              "graphql": { "query": "query {\n  findUser(id: 999999) {\n    name\n    email\n  }\n}", "variables": "{}" }
+            },
+            "url": { "raw": "{{graphqlUrl}}", "host": ["{{graphqlUrl}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

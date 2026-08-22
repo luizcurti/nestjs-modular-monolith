@@ -17,7 +17,10 @@ describe('UsersInMemoryRepository', () => {
 
   describe('create', () => {
     it('should create a user and return it with auto-generated id', async () => {
-      const result = await repository.create({ name: 'Test User', email: 'test@example.com' });
+      const result = await repository.create({
+        name: 'Test User',
+        email: 'test@example.com',
+      });
 
       expect(result).toHaveProperty('id', 1);
       expect(result).toHaveProperty('name', 'Test User');
@@ -25,8 +28,14 @@ describe('UsersInMemoryRepository', () => {
     });
 
     it('should auto-increment ids for multiple users', async () => {
-      const u1 = await repository.create({ name: 'User 1', email: 'u1@example.com' });
-      const u2 = await repository.create({ name: 'User 2', email: 'u2@example.com' });
+      const u1 = await repository.create({
+        name: 'User 1',
+        email: 'u1@example.com',
+      });
+      const u2 = await repository.create({
+        name: 'User 2',
+        email: 'u2@example.com',
+      });
 
       expect(u1.id).toBe(1);
       expect(u2.id).toBe(2);
@@ -70,7 +79,10 @@ describe('UsersInMemoryRepository', () => {
 
   describe('findById', () => {
     it('should return the user by id', async () => {
-      const created = await repository.create({ name: 'Find Me', email: 'find@example.com' });
+      const created = await repository.create({
+        name: 'Find Me',
+        email: 'find@example.com',
+      });
 
       const result = await repository.findById(created.id);
 
@@ -86,7 +98,10 @@ describe('UsersInMemoryRepository', () => {
 
   describe('update', () => {
     it('should update name and return updated user', async () => {
-      const created = await repository.create({ name: 'Old Name', email: 'upd@example.com' });
+      const created = await repository.create({
+        name: 'Old Name',
+        email: 'upd@example.com',
+      });
 
       const result = await repository.update(created.id, { name: 'New Name' });
 
@@ -95,9 +110,14 @@ describe('UsersInMemoryRepository', () => {
     });
 
     it('should update email and return updated user', async () => {
-      const created = await repository.create({ name: 'Name', email: 'old@example.com' });
+      const created = await repository.create({
+        name: 'Name',
+        email: 'old@example.com',
+      });
 
-      const result = await repository.update(created.id, { email: 'new@example.com' });
+      const result = await repository.update(created.id, {
+        email: 'new@example.com',
+      });
 
       expect(result).toHaveProperty('email', 'new@example.com');
     });
@@ -111,7 +131,10 @@ describe('UsersInMemoryRepository', () => {
 
   describe('delete', () => {
     it('should remove user from the list', async () => {
-      const created = await repository.create({ name: 'Delete Me', email: 'del@example.com' });
+      const created = await repository.create({
+        name: 'Delete Me',
+        email: 'del@example.com',
+      });
 
       await repository.delete(created.id);
 

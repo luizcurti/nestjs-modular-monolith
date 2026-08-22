@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-users.dto';
 import { UpdateUserDto } from './dtos/update-users.dto';
 import { User } from '../domain/models/users.model';
@@ -6,11 +16,11 @@ import { UsersService } from '../domain/users.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   create(@Body() userDto: CreateUserDto): Promise<User> {
-    return this.usersService.create(userDto)
+    return this.usersService.create(userDto);
   }
 
   @Get()

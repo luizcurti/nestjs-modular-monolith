@@ -1,0 +1,47 @@
+flowchart TB
+    client["Client<br/>(REST / GraphQL)"]
+
+    subgraph app["Single NestJS process — AppModule (port 3000)"]
+        direction TB
+
+        subgraph usersCtx["users — bounded context"]
+            usersHttp["UsersController / UserResolver"]
+            usersSvc["UsersService"]
+            usersRepoPort(["UsersRepository (port)"])
+            usersTypeOrm["UsersTypeOrmRepository"]
+            usersMemory["UsersInMemoryRepository"]
+
+            usersHttp --> usersSvc
+            usersSvc --> usersRepoPort
+            usersRepoPort -.implements.-> usersTypeOrm
+            usersRepoPort -.implements.-> usersMemory
+        end
+
+        subgraph creditCtx["credit-engine — bounded context"]
+            creditHttp["CreditController"]
+            creditSvc["CreditService"]
+            creditHttp --> creditSvc
+        end
+
+        subgraph umCtx["users-management — bounded context"]
+            processor["UsersManagementProcessor"]
+        end
+
+        queue[["Bull queue: users"]]
+        usersSvc -- "user.created / user.email.send" --> queue
+        queue --> processor
+    end
+
+    postgres[("PostgreSQL<br/>(user table)")]
+    mongo[("MongoDB<br/>(users_management)")]
+    redis[("Redis<br/>(Bull backing store)")]
+
+    client --> usersHttp
+    client --> creditHttp
+    usersTypeOrm --> postgres
+    processor --> mongo
+    queue --> redis
+
+    style usersCtx fill:#eef,stroke:#446
+    style creditCtx fill:#efe,stroke:#464
+    style umCtx fill:#fee,stroke:#644

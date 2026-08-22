@@ -10,8 +10,7 @@
     "src/**/*.(t|j)s",
     "!src/**/*.spec.ts",
     "!src/**/*.interface.ts",
-    "!src/main.ts",
-    "!src/credit-main.ts"
+    "!src/main.ts"
   ],
   "testEnvironment": "node",
   "moduleFileExtensions": ["js", "json", "ts"],

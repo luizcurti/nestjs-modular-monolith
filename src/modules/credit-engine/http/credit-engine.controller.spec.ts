@@ -28,8 +28,8 @@ describe('CreditController', () => {
         },
       ],
     })
-    .setLogger(mockLogger)
-    .compile();
+      .setLogger(mockLogger)
+      .compile();
 
     controller = module.get<CreditController>(CreditController);
   });
@@ -44,23 +44,21 @@ describe('CreditController', () => {
 
   describe('findAll', () => {
     it('should return credit engine message', () => {
-      
       const expectedMessage = 'Hello Credit Engine';
       mockCreditService.findAll.mockReturnValue(expectedMessage);
-  
+
       const result = controller.findAll();
-      
+
       expect(mockCreditService.findAll).toHaveBeenCalled();
       expect(result).toBe(expectedMessage);
     });
 
     it('should handle service responses', () => {
-      
       const customMessage = 'Custom Credit Message';
       mockCreditService.findAll.mockReturnValue(customMessage);
-  
+
       const result = controller.findAll();
-      
+
       expect(mockCreditService.findAll).toHaveBeenCalled();
       expect(result).toBe(customMessage);
     });

@@ -12,7 +12,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UsersController } from '../src/modules/users/http/users.controller';
@@ -22,7 +21,7 @@ import { CreditController } from '../src/modules/credit-engine/http/credit-engin
 import { CreditService } from '../src/modules/credit-engine/domain/credit-engine.service';
 import { provideUsersRepository } from '../src/modules/users/domain/repositories/user.repository.provider';
 import { LoggerModule } from '../src/common/loggers/logger.module';
-import { User } from '../src/modules/users/domain/models/users.model';
+import { UserOrmEntity } from '../src/modules/users/domain/repositories/implementations/users.typeorm.entity';
 import { AllExceptionsFilter } from '../src/common/filters/exception.filter';
 import databaseConfig from '../src/config/database.config';
 import { DataSource } from 'typeorm';
@@ -60,11 +59,10 @@ describe('Application E2E — PostgreSQL Docker', () => {
           username: process.env.TYPEORM_USERNAME || 'qso_user',
           password: process.env.TYPEORM_PASSWORD || 'qso_password',
           database: process.env.TYPEORM_DATABASE || 'qso_example',
-          entities: [User],
+          entities: [UserOrmEntity],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([User]),
-        EventEmitterModule.forRoot(),
+        TypeOrmModule.forFeature([UserOrmEntity]),
         GraphQLModule.forRoot<ApolloDriverConfig>({
           driver: ApolloDriver,
           autoSchemaFile: true,
@@ -118,10 +116,15 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .post('/v1/users')
         .send({ name: 'List Test', email: 'lista@example.com' });
 
-      const res = await request(app.getHttpServer()).get('/v1/users').expect(200);
+      const res = await request(app.getHttpServer())
+        .get('/v1/users')
+        .expect(200);
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBe(1);
-      expect(res.body[0]).toMatchObject({ name: 'List Test', email: 'lista@example.com' });
+      expect(res.body[0]).toMatchObject({
+        name: 'List Test',
+        email: 'lista@example.com',
+      });
     });
   });
 
@@ -139,7 +142,10 @@ describe('Application E2E — PostgreSQL Docker', () => {
       expect(res.body).toHaveProperty('id');
       expect(typeof res.body.id).toBe('number');
       expect(res.body.id).toBeGreaterThan(0);
-      expect(res.body).toMatchObject({ name: 'John Doe', email: 'john.doe@example.com' });
+      expect(res.body).toMatchObject({
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+      });
     });
 
     it('persists in DB — GET returns the created user afterwards', async () => {
@@ -150,14 +156,22 @@ describe('Application E2E — PostgreSQL Docker', () => {
 
       const id = create.body.id;
 
-      const getRes = await request(app.getHttpServer()).get('/v1/users').expect(200);
+      const getRes = await request(app.getHttpServer())
+        .get('/v1/users')
+        .expect(200);
       const found = getRes.body.find((u: { id: number }) => u.id === id);
       expect(found).toBeDefined();
-      expect(found).toMatchObject({ name: 'Persist Test', email: 'persist@example.com' });
+      expect(found).toMatchObject({
+        name: 'Persist Test',
+        email: 'persist@example.com',
+      });
     });
 
     it('returns 400 when body is empty', () => {
-      return request(app.getHttpServer()).post('/v1/users').send({}).expect(400);
+      return request(app.getHttpServer())
+        .post('/v1/users')
+        .send({})
+        .expect(400);
     });
 
     it('returns 400 for invalid email', () => {
@@ -193,9 +207,15 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .send({ name: 'Find Me', email: 'findme@example.com' });
 
       const id = create.body.id;
-      const res = await request(app.getHttpServer()).get(`/v1/users/${id}`).expect(200);
+      const res = await request(app.getHttpServer())
+        .get(`/v1/users/${id}`)
+        .expect(200);
 
-      expect(res.body).toMatchObject({ id, name: 'Find Me', email: 'findme@example.com' });
+      expect(res.body).toMatchObject({
+        id,
+        name: 'Find Me',
+        email: 'findme@example.com',
+      });
     });
 
     it('returns 404 for non-existent ID in DB', () => {
@@ -224,10 +244,16 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .send({ name: 'New Name' })
         .expect(200);
 
-      expect(update.body).toMatchObject({ id, name: 'New Name', email: 'update@example.com' });
+      expect(update.body).toMatchObject({
+        id,
+        name: 'New Name',
+        email: 'update@example.com',
+      });
 
       // confirms persistence by querying again
-      const get = await request(app.getHttpServer()).get(`/v1/users/${id}`).expect(200);
+      const get = await request(app.getHttpServer())
+        .get(`/v1/users/${id}`)
+        .expect(200);
       expect(get.body.name).toBe('New Name');
     });
 
@@ -243,9 +269,15 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .send({ email: 'new@example.com' })
         .expect(200);
 
-      expect(update.body).toMatchObject({ id, name: 'Email Upd', email: 'new@example.com' });
+      expect(update.body).toMatchObject({
+        id,
+        name: 'Email Upd',
+        email: 'new@example.com',
+      });
 
-      const get = await request(app.getHttpServer()).get(`/v1/users/${id}`).expect(200);
+      const get = await request(app.getHttpServer())
+        .get(`/v1/users/${id}`)
+        .expect(200);
       expect(get.body.email).toBe('new@example.com');
     });
 
@@ -293,13 +325,17 @@ describe('Application E2E — PostgreSQL Docker', () => {
       await request(app.getHttpServer()).get(`/v1/users/${id}`).expect(404);
 
       // confirms it does not appear in the list
-      const list = await request(app.getHttpServer()).get('/v1/users').expect(200);
+      const list = await request(app.getHttpServer())
+        .get('/v1/users')
+        .expect(200);
       const found = list.body.find((u: { id: number }) => u.id === id);
       expect(found).toBeUndefined();
     });
 
     it('returns 404 when deleting non-existent user', () => {
-      return request(app.getHttpServer()).delete('/v1/users/999999').expect(404);
+      return request(app.getHttpServer())
+        .delete('/v1/users/999999')
+        .expect(404);
     });
 
     it('returns 400 for non-numeric ID', () => {
@@ -341,7 +377,10 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .expect(200);
 
       expect(res.body.errors).toBeUndefined();
-      expect(res.body.data.create).toMatchObject({ name: 'GQL User', email: 'gql@example.com' });
+      expect(res.body.data.create).toMatchObject({
+        name: 'GQL User',
+        email: 'gql@example.com',
+      });
     });
 
     it('query findAll — returns persisted users', async () => {
@@ -372,7 +411,10 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .expect(200);
 
       expect(res.body.errors).toBeUndefined();
-      expect(res.body.data.findUser).toMatchObject({ name: 'GQL By ID', email: 'gqlbyid@example.com' });
+      expect(res.body.data.findUser).toMatchObject({
+        name: 'GQL By ID',
+        email: 'gqlbyid@example.com',
+      });
     });
 
     it('query findUser — returns null for non-existent ID', async () => {
@@ -382,6 +424,7 @@ describe('Application E2E — PostgreSQL Docker', () => {
         .expect(200);
 
       // The resolver returns null (nullable field) without a GraphQL error
+      expect(res.body.errors).toBeUndefined();
       expect(res.body.data.findUser).toBeNull();
     });
   });
@@ -404,7 +447,9 @@ describe('Application E2E — PostgreSQL Docker', () => {
     });
 
     it('error response contains statusCode, message, timestamp and path', async () => {
-      const res = await request(app.getHttpServer()).get('/v1/users/999999').expect(404);
+      const res = await request(app.getHttpServer())
+        .get('/v1/users/999999')
+        .expect(404);
       expect(res.body).toHaveProperty('statusCode', 404);
       expect(res.body).toHaveProperty('message');
       expect(res.body).toHaveProperty('timestamp');

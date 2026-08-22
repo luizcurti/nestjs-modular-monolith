@@ -1,1 +1,1 @@
-export const S3Provider = 'S3'
+export const S3Provider = 'S3';
