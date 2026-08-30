@@ -50,7 +50,6 @@ There is no single, app-wide ORM. Each module picks the data-access tool that ma
 | `users` | [TypeORM](https://typeorm.io/) behind a `UsersRepository` port (`user.repository.interface.ts`) | PostgreSQL | Core user identity needs relational consistency (unique emails, numeric IDs). The service depends only on the `UsersRepository` interface and the plain `User` domain model — never on TypeORM directly. The `@Entity`-decorated `UserOrmEntity` lives exclusively inside `users.typeorm.repository.ts`, which maps rows back to `User`. `provideUsersRepositoryFactory` swaps in `UsersTypeOrmRepository` or `UsersInMemoryRepository` at runtime based on the `DATABASE_DATASOURCE` env var, so unit tests and local runs never need a real Postgres connection. |
 | `users-management` | [Mongoose](https://mongoosejs.com/) via `@nestjs/mongoose` | MongoDB | This context processes background side-effects of user creation (e.g. the welcome-email job) and is expected to grow more loosely-structured job/audit payloads over time — a schema-flexible document store fits that better than a relational table, and it's reached only through the Bull queue, never a direct call from `users`. |
 | `credit-engine` | — | — | Placeholder bounded context (`GET /v1/credit` health check only). It will pick its own store once real domain requirements land — nothing here presumes TypeORM or Mongoose. |
-| *(repo-wide)* [Prisma](https://www.prisma.io/) | `prisma/schema.prisma` (PostgreSQL) | client generation only | Present as a dependency and schema, but **not currently wired into any running module** — no service in `src/` imports `PrismaClient`. It's kept available (`npm run db:generate`) for a future bounded context that would rather use Prisma's schema-first, fully-typed client than TypeORM's repository style. Don't assume Prisma is live in the request path today. |
 
 The rule that makes this safe: a module's ORM choice is a private implementation detail of that bounded context. Nothing outside `users/domain/repositories` knows or cares that TypeORM is involved, and nothing outside `users-management/domain` knows Mongoose is involved — swapping either one out only touches that module.
 
@@ -65,7 +64,7 @@ The rule that makes this safe: a module's ORM choice is a private implementation
 | TypeScript | 5.x (bundled as a devDependency, see `package.json`) |
 | Docker & Docker Compose | 24+ |
 
-Dependencies are kept current: NestJS 11, TypeORM 0.3, Mongoose 9, ESLint 9 (flat config via `eslint.config.mjs`), Prettier 3, and Jest 29. Run `npm outdated` at any time to check for newer releases.
+Dependencies are kept current: NestJS 11, TypeORM 0.3, Mongoose 9, ESLint 10 (flat config via `eslint.config.mjs`), Prettier 3, and Jest 29. TypeScript runs in `strict` mode (`tsconfig.json`). Run `npm outdated` at any time to check for newer releases.
 
 ---
 
@@ -120,8 +119,10 @@ npm run start:prod         # Run compiled build
 npm run build
 
 # Code quality
-npm run lint               # ESLint + auto-fix
-npm run format             # Prettier
+npm run lint               # ESLint (check-only, used in CI)
+npm run lint:fix           # ESLint + auto-fix
+npm run format             # Prettier (write)
+npm run format:check       # Prettier (check-only, used in CI)
 
 # Tests
 npm run test               # Unit tests (Jest)
@@ -133,10 +134,6 @@ npm run test:e2e:docker    # E2E tests against real PostgreSQL (requires Docker)
 
 # Postman collection (requires the app running on localhost:3000)
 npx newman run docs/postman/nestjs-modular-monolith.postman_collection.json
-
-# Prisma (schema generation only — not wired into a running module)
-npm run db:generate        # Generate Prisma client from prisma/schema.prisma
-npm run db:format          # Format the Prisma schema
 ```
 
 ---
@@ -369,15 +366,17 @@ npx -p @mermaid-js/mermaid-cli -p puppeteer mmdc -i docs/mmd/<name>.mmd -o docs/
 GitHub Actions (`.github/workflows/ci.yml`) runs on every push against live PostgreSQL, Redis and MongoDB service containers:
 
 1. Install dependencies
-2. ESLint (flat config) + TypeScript compilation check
-3. Unit tests with coverage
-4. Integration tests (real PostgreSQL + MongoDB)
-5. E2E tests — SQLite in-memory
-6. E2E tests — real PostgreSQL
-7. `npm audit` security scan (non-blocking)
-8. Build the application
-9. Boot the compiled build and replay the Postman collection against it (Newman)
-10. Docker image build + `docker compose config` sanity check
+2. Prettier format check (fails the build instead of silently rewriting files)
+3. ESLint (flat config, check-only — `npm run lint:fix` is for local use)
+4. TypeScript compilation check (`strict: true`)
+5. Unit tests with coverage
+6. Integration tests (real PostgreSQL + MongoDB)
+7. E2E tests — SQLite in-memory
+8. E2E tests — real PostgreSQL
+9. `npm audit` security scan (non-blocking)
+10. Build the application
+11. Boot the compiled build and replay the Postman collection against it (Newman)
+12. Docker image build + `docker compose config` sanity check
 
 ---
 

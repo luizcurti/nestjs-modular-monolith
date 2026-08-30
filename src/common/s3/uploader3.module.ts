@@ -21,12 +21,11 @@ import { UploaderS3Service } from './uploaderS3.service';
         accessKeyId,
         secretAccessKey,
       }: ConfigType<typeof s3Config>): S3Client =>
-        new S3Client({
-          credentials: {
-            accessKeyId,
-            secretAccessKey,
-          },
-        }),
+        new S3Client(
+          accessKeyId && secretAccessKey
+            ? { credentials: { accessKeyId, secretAccessKey } }
+            : {},
+        ),
       inject: [s3Config.KEY],
     },
   ],

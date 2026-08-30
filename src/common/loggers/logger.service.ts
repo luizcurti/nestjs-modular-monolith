@@ -9,7 +9,7 @@ export enum LogLevel {
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class LoggerService {
-  private _idempotencyKey: string;
+  private _idempotencyKey?: string;
   private _contextName = 'Default';
   private readonly logger: Logger = createLogger();
 
@@ -24,7 +24,7 @@ export class LoggerService {
     this._idempotencyKey = idempotencyKey;
   }
 
-  get idempotencyKey(): string {
+  get idempotencyKey(): string | undefined {
     return this._idempotencyKey;
   }
 

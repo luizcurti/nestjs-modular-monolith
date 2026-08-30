@@ -6,22 +6,22 @@ export class CreateUserDto {
   @Field(() => String)
   @IsString()
   @IsNotEmpty()
-  readonly name: string;
+  readonly name!: string;
 
   @Field(() => String)
   @IsEmail()
   @IsNotEmpty()
-  readonly email: string;
+  readonly email!: string;
 }
 
 @ObjectType()
 export class UserOutput {
   @Field(() => Int)
-  readonly id: number;
+  readonly id!: number;
 
   @Field(() => String)
-  readonly name: string;
+  readonly name!: string;
 
   @Field(() => String)
-  readonly email: string;
+  readonly email!: string;
 }

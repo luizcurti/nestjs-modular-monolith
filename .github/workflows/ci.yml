@@ -75,6 +75,9 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       # STATIC ANALYSIS
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Run ESLint
         run: npm run lint
 
@@ -125,3 +128,32 @@ jobs:
 
       - name: Test Docker Compose
         run: docker compose config
+
+      - name: Boot Docker image and verify health
+        run: |
+          docker run -d --name app-docker-validate \
+            --add-host=host.docker.internal:host-gateway \
+            -p 3000:3000 \
+            -e DATABASE_DATASOURCE=typeorm \
+            -e TYPEORM_TYPE=postgres \
+            -e TYPEORM_HOST=host.docker.internal \
+            -e TYPEORM_PORT=5432 \
+            -e TYPEORM_USERNAME=qso_user \
+            -e TYPEORM_PASSWORD=qso_password \
+            -e TYPEORM_DATABASE=qso_example \
+            -e REDIS_HOST=host.docker.internal \
+            -e REDIS_PORT=6379 \
+            -e MONGODB_URL=mongodb://host.docker.internal:27017/users_management_ci \
+            nestjs-modular-monolith
+          npx wait-on http://localhost:3000/v1/credit --timeout 30000
+          for i in $(seq 1 10); do
+            status="$(docker inspect --format='{{.State.Health.Status}}' app-docker-validate)"
+            [ "$status" = "healthy" ] && break
+            sleep 3
+          done
+          docker logs app-docker-validate
+          docker inspect --format='{{.State.Health.Status}}' app-docker-validate | grep -q healthy
+
+      - name: Stop Docker image
+        if: always()
+        run: docker rm -f app-docker-validate || true

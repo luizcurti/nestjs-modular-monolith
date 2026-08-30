@@ -28,6 +28,6 @@ EXPOSE 3000
 
 # Health check using curl
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/users || exit 1
+  CMD curl -f http://localhost:3000/v1/credit || exit 1
 
 CMD [ "npm", "run", "start:prod" ]

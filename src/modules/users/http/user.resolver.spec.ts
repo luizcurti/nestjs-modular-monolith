@@ -100,7 +100,7 @@ describe('UserResolver', () => {
     });
 
     it('should return null when user does not exist', async () => {
-      mockUsersService.findById.mockResolvedValue(null);
+      mockUsersService.findById.mockResolvedValue(null as any);
 
       const result = await resolver.findUser(99);
 
