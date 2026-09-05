@@ -59,7 +59,7 @@ The rule that makes this safe: a module's ORM choice is a private implementation
 
 | Tool | Version |
 |------|---------|
-| Node.js | 22+ |
+| Node.js | 24+ |
 | npm | 10+ |
 | TypeScript | 5.x (bundled as a devDependency, see `package.json`) |
 | Docker & Docker Compose | 24+ |
