@@ -1,0 +1,15 @@
+node_modules
+dist
+.docker*
+coverage
+logs
+*.log
+.DS_Store
+.env
+# Terraform (infra/, bootstrap/)
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+infra/ci_backend.tf
+infra/*.log

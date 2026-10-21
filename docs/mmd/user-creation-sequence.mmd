@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    actor Client
+    participant API as UsersController / UserResolver
+    participant Svc as UsersService
+    participant Repo as UsersRepository (TypeORM)
+    participant PG as PostgreSQL
+    participant Queue as Bull queue (users)
+    participant Proc as UsersManagementProcessor
+    participant Mongo as MongoDB
+
+    Client->>API: POST /v1/users { name, email }
+    API->>Svc: create(dto)
+    Svc->>Repo: create(dto)
+    Repo->>PG: INSERT INTO "user" ...
+    PG-->>Repo: row with generated id
+    Repo-->>Svc: User { id, name, email }
+    Svc->>Queue: add('user.created', event)
+    Svc->>Queue: add('user.email.send', event)
+    Svc-->>API: User { id, name, email }
+    API-->>Client: 201 Created
+
+    par asynchronous processing
+        Queue->>Proc: process('user.created')
+        Proc->>Mongo: create({ name, email })
+        Mongo-->>Proc: document with _id
+    and
+        Queue->>Proc: process('user.email.send')
+        Proc->>Proc: log("SENDING WELCOME EMAIL TO ...")
+    end

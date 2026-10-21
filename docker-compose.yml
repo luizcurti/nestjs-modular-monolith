@@ -1,0 +1,59 @@
+name: nestjs-modular-monolith
+
+services:
+  postgres:
+    container_name: qso
+    image: postgres:11.8
+    environment:
+      POSTGRES_DB: "qso_example"
+      POSTGRES_USER: "qso_user"
+      POSTGRES_PASSWORD: "qso_password"
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    networks:
+      - app-network
+    external_links:
+      - app-network
+    volumes:
+      - ./.docker-volumes/pgdata2:/var/lib/postgresql/data
+
+  mongodb_container:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+
+  redis:
+    container_name: qso_redis
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - .:/usr/app
+    networks:
+      - app-network
+  # app:
+  #   build:
+  #     context: .
+  #   container_name: app-all-module
+  #   command: yarn start:dev
+  #   ports:
+  #     - '3000:3000'
+  #   volumes:
+  #     - .:/usr/app
+  #   networks:
+  #     - app-network
+  #   depends_on:
+  #     - postgres
+  #     - mongodb_container
+  #     - redis
+
+networks:
+  app-network:
+
+
+volumes:
+  mongodb_data_container:

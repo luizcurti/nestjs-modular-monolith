@@ -1,0 +1,12 @@
+flowchart BT
+    unit["Unit tests (Jest)<br/>142 tests — services, controllers, resolvers,<br/>repositories, filters, events — mocked dependencies"]
+    integration["Integration tests (Jest)<br/>10 tests — real PostgreSQL + real MongoDB,<br/>no HTTP layer, no mocks"]
+    e2e["E2E tests (Jest + Supertest)<br/>27 tests (SQLite) / 27 tests (Docker PostgreSQL)<br/>full HTTP + GraphQL surface, real app boot"]
+    collection["Postman collection (Newman)<br/>17 requests / 27 assertions<br/>black-box contract check against a running instance"]
+
+    unit --> integration --> e2e --> collection
+
+    style unit fill:#eef,stroke:#446
+    style integration fill:#efe,stroke:#464
+    style e2e fill:#ffe,stroke:#664
+    style collection fill:#fee,stroke:#644
