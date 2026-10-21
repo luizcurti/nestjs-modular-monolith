@@ -88,6 +88,9 @@ cp .env.example .env   # or create .env manually from the table below
 | `MONGODB_URL` | `mongodb://127.0.0.1:27017/users_management` | MongoDB connection (used by the `users-management` bounded context) |
 | `REDIS_HOST` | `127.0.0.1` | Redis host |
 | `REDIS_PORT` | `6379` | Redis port |
+| `REDIS_PASSWORD` | _(unset)_ | Optional Redis AUTH token (e.g. ElastiCache) |
+| `REDIS_TLS` | _(unset)_ | `true` to connect to Redis over TLS (required by ElastiCache with an AUTH token) |
+| `TYPEORM_SSL` | _(unset)_ | `true` to encrypt the PostgreSQL connection (required by RDS by default) |
 
 ---
 
@@ -377,6 +380,10 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push against live Post
 10. Build the application
 11. Boot the compiled build and replay the Postman collection against it (Newman)
 12. Docker image build + `docker compose config` sanity check
+13. Terraform fmt + validate of `infra/` and `bootstrap/`
+14. On `main`: **deploy to AWS** (CloudFront → ALB → ECS Fargate, RDS PostgreSQL, ElastiCache Redis, MongoDB on Fargate) through GitHub OIDC, then [`scripts/smoke-test.sh`](scripts/smoke-test.sh) against the live stack — the Postman collection plus a GraphQL-created user followed through Redis (Bull) into MongoDB
+
+A manual **Destroy** workflow tears the AWS stack down. Setup, architecture and costs: [docs/deployment.md](docs/deployment.md).
 
 ---
 

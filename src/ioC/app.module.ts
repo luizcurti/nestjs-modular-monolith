@@ -23,6 +23,8 @@ import { UserOrmEntity } from '../modules/users/domain/repositories/implementati
         redis: {
           port: configDatabase.port,
           host: configDatabase.host,
+          password: configDatabase.password,
+          ...(configDatabase.tls && { tls: {} }),
         },
       }),
       inject: [redisConfig.KEY],
@@ -40,6 +42,7 @@ import { UserOrmEntity } from '../modules/users/domain/repositories/implementati
         entities: [UserOrmEntity],
         synchronize: true,
         database: configDatabase.database,
+        ssl: configDatabase.ssl ? { rejectUnauthorized: false } : false,
       }),
       inject: [databaseConfig.KEY],
     }),
